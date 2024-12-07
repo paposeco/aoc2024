@@ -102,7 +102,7 @@ const findDosDonts = function (file: string): DoDont[] {
 };
 
 const removeDisabledMuls = function (file: string) {
-  const dosDonts = findDosDonts(file);
+  const dosIndexes = findDosDonts(file);
   // console.log(dosDonts);
   const validMuls = findValidMuls(file);
   let currIndex = 0;
@@ -111,42 +111,58 @@ const removeDisabledMuls = function (file: string) {
   let doType = "do";
   let indexesToRemove: number[][] = [];
 
-  while (currIndex < dosDonts[dosDonts.length - 1].index) {
-    currIndex = dosDonts[indexDosDonts].index;
-    // console.log(currIndex);
-    if (dosDonts[indexDosDonts].type !== doType) {
+  while (currIndex < dosIndexes[dosIndexes.length - 1].index) {
+    currIndex = dosIndexes[indexDosDonts].index;
+    console.log("currIndex: " + currIndex);
+    console.log(
+      "do/dont object: " + dosIndexes[indexDosDonts].index,
+      dosIndexes[indexDosDonts].type
+    );
+    console.log("curr type: " + doType);
+    if (dosIndexes[indexDosDonts].type !== doType) {
       // change
-      // console.log("change");
-      doType = dosDonts[indexDosDonts].type;
-      indexesToRemove.push([lastValidIndex, currIndex]);
+      console.log("change");
+      doType = dosIndexes[indexDosDonts].type;
+      if (doType === "do") {
+        indexesToRemove.push([lastValidIndex, currIndex]);
+      }
+      // indexesToRemove.push([lastValidIndex, currIndex]);
       lastValidIndex = currIndex;
     } else {
+      console.log("dont change");
     }
     ++indexDosDonts;
   }
-  // console.log(indexesToRemove);
-  //console.log(validMuls);
+  //  console.log(indexesToRemove);
+  //  console.log(validMuls);
   const indextoremoveinmuls: number[] = [];
-  for (let i = 1; i < indexesToRemove.length; i++) {
+  for (let i = 0; i < indexesToRemove.length; i++) {
     // console.log("----------------");
     const beg = indexesToRemove[i][0];
     const end = indexesToRemove[i][1];
-
-    // console.log(beg, end);
+    console.log("aqui");
+    console.log(beg, end);
     for (let j = 0; j < validMuls.length; j++) {
       //   console.log("-----------------------");
       //  console.log(j);
       //isto n\ao est]a bem aqui. s]o esta a irbuscar indexes no inicio e no fim
       const currMul = validMuls[j];
-
+      if (currMul < beg) {
+        continue;
+      }
+      //console.log("inside?");
+      //console.log(beg, end);
+      // console.log(currMul);
       if (currMul > beg && currMul < end) {
-        console.log(currMul);
-        console.log("inside interval");
+        //  console.log(currMul);
+        // console.log("inside interval");
         indextoremoveinmuls.push(currMul);
+      } else if (currMul > end) {
+        break;
       }
     }
   }
-  //console.log(indextoremoveinmuls);
+  console.log(indextoremoveinmuls);
   return indextoremoveinmuls;
 };
 
@@ -156,15 +172,8 @@ const doTheNewMath = function (file: string) {
   const validMuls = findValidMuls(file);
   let newValidMuls: number[] = [];
 
-  let iCant: number[] = [];
-  for (let k = 0; k < validMuls.length; k++) {
-    const currValidMul = validMuls[k];
-    console.log(currValidMul);
-    const toBeRemoved = indexestoremovefromvalidmuls.includes(currValidMul);
-    if (!toBeRemoved) {
-      iCant.push(currValidMul);
-    }
-  }
+  //console.log(validMuls);
+  //console.log(indexestoremovefromvalidmuls);
   validMuls.forEach((mul) => {
     //  console.log(mul);
     if (indexestoremovefromvalidmuls.includes(mul)) {
@@ -173,7 +182,8 @@ const doTheNewMath = function (file: string) {
       newValidMuls.push(mul);
     }
   });
-  console.log(newValidMuls.length, iCant.length);
+
+  console.log(newValidMuls);
 
   const regex = /mul\(\d{1,3},\d{1,3}\)/;
   let doTheMath = 0;
