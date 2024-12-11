@@ -101,95 +101,74 @@ const findDosDonts = function (file: string): DoDont[] {
   return indexes.sort(compareFn);
 };
 
-const removeDisabledMuls = function (file: string) {
-  const dosIndexes = findDosDonts(file);
-  // console.log(dosDonts);
-  const validMuls = findValidMuls(file);
-  let currIndex = 0;
-  let lastValidIndex = 0;
-  let indexDosDonts = 0;
-  let doType = "do";
-  let indexesToRemove: number[][] = [];
-
-  while (currIndex < dosIndexes[dosIndexes.length - 1].index) {
-    currIndex = dosIndexes[indexDosDonts].index;
-    console.log("currIndex: " + currIndex);
-    console.log(
-      "do/dont object: " + dosIndexes[indexDosDonts].index,
-      dosIndexes[indexDosDonts].type
-    );
-    console.log("curr type: " + doType);
-    if (dosIndexes[indexDosDonts].type !== doType) {
-      // change
-      console.log("change");
-      doType = dosIndexes[indexDosDonts].type;
-      if (doType === "do") {
-        indexesToRemove.push([lastValidIndex, currIndex]);
-      }
-      // indexesToRemove.push([lastValidIndex, currIndex]);
-      lastValidIndex = currIndex;
-    } else {
-      console.log("dont change");
+const findMulsIndexesBetweenDos = function (
+  validMuls: number[],
+  dosIntervals: number[]
+) {
+  let muls: number[] = [];
+  for (let i = 0; i < validMuls.length; i++) {
+    const currValidMulIndex = validMuls[i];
+    if (currValidMulIndex < dosIntervals[0]) {
+      continue;
+    } else if (currValidMulIndex > dosIntervals[1]) {
+      // se a string continuar depois do do, nao estou a cntab
+      break;
     }
-    ++indexDosDonts;
+    muls.push(currValidMulIndex);
   }
-  //  console.log(indexesToRemove);
-  //  console.log(validMuls);
-  const indextoremoveinmuls: number[] = [];
-  for (let i = 0; i < indexesToRemove.length; i++) {
-    // console.log("----------------");
-    const beg = indexesToRemove[i][0];
-    const end = indexesToRemove[i][1];
-    console.log("aqui");
-    console.log(beg, end);
-    for (let j = 0; j < validMuls.length; j++) {
-      //   console.log("-----------------------");
-      //  console.log(j);
-      //isto n\ao est]a bem aqui. s]o esta a irbuscar indexes no inicio e no fim
-      const currMul = validMuls[j];
-      if (currMul < beg) {
-        continue;
-      }
-      //console.log("inside?");
-      //console.log(beg, end);
-      // console.log(currMul);
-      if (currMul > beg && currMul < end) {
-        //  console.log(currMul);
-        // console.log("inside interval");
-        indextoremoveinmuls.push(currMul);
-      } else if (currMul > end) {
-        break;
-      }
-    }
-  }
-  console.log(indextoremoveinmuls);
-  return indextoremoveinmuls;
+  return muls;
 };
 
-const doTheNewMath = function (file: string) {
-  const indexestoremovefromvalidmuls = removeDisabledMuls(file);
-  const str = prepFile(file);
-  const validMuls = findValidMuls(file);
-  let newValidMuls: number[] = [];
+const findMulsBetweenDos = function (
+  stringlength: number,
+  validMuls: number[],
+  dosDotsIndexes: DoDont[]
+) {
+  let currentType = "do";
+  let prevIndex = -1;
+  let mulsToCount: number[][] = [];
 
-  //console.log(validMuls);
-  //console.log(indexestoremovefromvalidmuls);
-  validMuls.forEach((mul) => {
-    //  console.log(mul);
-    if (indexestoremovefromvalidmuls.includes(mul)) {
-    } else {
-      //     console.log("push");
-      newValidMuls.push(mul);
+  for (let i = 0; i < dosDotsIndexes.length; i++) {
+    const index = dosDotsIndexes[i].index;
+    const type = dosDotsIndexes[i].type;
+    if (currentType === type) {
+      continue;
     }
-  });
+    currentType = type;
+    if (type === "dont") {
+      // calculate
+      const interval = [prevIndex, index];
+      const muls = findMulsIndexesBetweenDos(validMuls, interval);
+      mulsToCount.push(muls);
+    } else {
+      prevIndex = index;
+      if (i === dosDotsIndexes.length - 1) {
+        console.log("here");
+        const interval = [index, stringlength - 1];
+        console.log(interval);
+        const muls = findMulsIndexesBetweenDos(validMuls, interval);
+        mulsToCount.push(muls);
+      }
+    }
+  }
+  return mulsToCount;
+};
 
-  console.log(newValidMuls);
-
+const newCalculation = function (file: string) {
+  const validMuls = findValidMuls(file);
+  const str = prepFile(file);
+  const dosAndDonts = findDosDonts(file);
+  const finalValidMuls = findMulsBetweenDos(
+    str.length,
+    validMuls,
+    dosAndDonts
+  ).flat();
   const regex = /mul\(\d{1,3},\d{1,3}\)/;
   let doTheMath = 0;
-  for (let i = 0; i < newValidMuls.length; i++) {
-    const maxWord = str.substring(newValidMuls[i], newValidMuls[i] + 12);
-    //console.log(maxWord);
+
+  for (let i = 0; i < finalValidMuls.length; i++) {
+    const maxWord = str.substring(finalValidMuls[i], finalValidMuls[i] + 12);
+    console.log(maxWord);
     const valid = maxWord.search(regex);
     if (valid === 0) {
       const comma = maxWord.indexOf(",");
@@ -203,6 +182,4 @@ const doTheNewMath = function (file: string) {
   return doTheMath;
 };
 
-console.log(doTheNewMath("input.txt"));
-
-// desliga no dont, ve qual ]e o proximo do e remove todos os muls entre esses indexes
+console.log(newCalculation("input.txt"));
