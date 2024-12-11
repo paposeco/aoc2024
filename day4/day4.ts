@@ -116,5 +116,57 @@ const countXmas = function (file: string) {
   return count;
 };
 
-console.log(countXmas("input.txt"));
+//console.log(countXmas("input.txt"));
 //console.log(mapLetters("inputmini.txt"));
+// part 2
+
+const locationsToCheckA = function (initialcoord: string): Location[][] {
+  const comma = initialcoord.indexOf(",");
+  const x = Number(initialcoord.substring(0, comma));
+  const y = Number(initialcoord.substring(comma + 1));
+  const masN = [
+    { xy: `${x - 1},${y - 1}`, letter: "M" },
+    { xy: `${x + 1},${y + 1}`, letter: "S" },
+  ];
+  const masS = [
+    { xy: `${x - 1},${y + 1}`, letter: "M" },
+    { xy: `${x + 1},${y - 1}`, letter: "S" },
+  ];
+  const samN = [
+    { xy: `${x - 1},${y - 1}`, letter: "S" },
+    { xy: `${x + 1},${y + 1}`, letter: "M" },
+  ];
+  const samS = [
+    { xy: `${x - 1},${y + 1}`, letter: "S" },
+    { xy: `${x + 1},${y - 1}`, letter: "M" },
+  ];
+  return [masN, masS, samN, samS];
+};
+
+const countAmas = function (file: string) {
+  const lines = prepFile(file);
+  const lettersMap = mapLetters(file);
+  let count = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    for (let j = 0; j < line.length; j++) {
+      if (line[j] !== "A") {
+        continue;
+      }
+      const locations = locationsToCheckA(`${j},${i}`);
+      let preCount = 0;
+      for (let k = 0; k < locations.length; k++) {
+        const wordExists = checkLocationsOnMap(locations[k], lettersMap);
+        if (wordExists) {
+          ++preCount;
+        }
+      }
+      if (preCount === 2) {
+        ++count;
+      }
+    }
+  }
+  return count;
+};
+
+console.log(countAmas("input.txt"));
